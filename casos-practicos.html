@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Koltin — Casos Prácticos</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Segoe UI', sans-serif; background: #f4f4f4; color: #1a1a1a; }
+
+.hero { background: #1B4D3E; padding: 32px 24px 24px; text-align: center; }
+.hero img { height: 48px; width: auto; display: block; margin: 0 auto 12px; }
+.hero-txt { font-size: 1.8rem; font-weight: 900; letter-spacing: 3px; color: #F5E642; display: none; margin-bottom: 8px; }
+.hero h1 { font-size: 1.6rem; font-weight: 900; color: #F5E642; }
+.hero p { color: #c8e6c9; font-size: 0.88rem; margin-top: 6px; }
+.hero-badge { display: inline-block; background: rgba(245,230,66,0.15); border: 1px solid #F5E642; color: #F5E642; font-size: 0.72rem; font-weight: 700; padding: 3px 12px; border-radius: 20px; margin-top: 10px; }
+
+/* SCORE BAR */
+.score-bar { background: white; border-bottom: 3px solid #F5E642; padding: 12px 24px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; justify-content: center; }
+.score-lbl { font-size: 0.83rem; font-weight: 700; color: #1B4D3E; }
+.score-track { flex: 1; min-width: 160px; max-width: 340px; background: #e8f5e9; border-radius: 20px; height: 9px; }
+.score-fill { background: #1B4D3E; height: 9px; border-radius: 20px; transition: width 0.4s; width: 0%; }
+.score-pct { font-size: 0.83rem; font-weight: 700; color: #1B4D3E; min-width: 36px; }
+
+/* CATEGORY TABS */
+nav { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; background: #1B4D3E; padding: 12px 16px; border-top: 1px solid rgba(255,255,255,0.1); }
+nav button { background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.3); color: white; padding: 7px 14px; border-radius: 20px; cursor: pointer; font-size: 0.78rem; font-weight: 600; transition: all 0.2s; }
+nav button:hover, nav button.active { background: #F5E642; color: #1B4D3E; border-color: #F5E642; font-weight: 700; }
+
+main { max-width: 860px; margin: 0 auto; padding: 20px 16px 60px; }
+.cat { display: none; }
+.cat.active { display: block; }
+
+.cat-hdr { margin-bottom: 18px; }
+.cat-hdr h2 { font-size: 1.15rem; font-weight: 900; color: #1B4D3E; }
+.cat-hdr p { font-size: 0.85rem; color: #5a7a6e; margin-top: 3px; }
+
+/* CASE CARD */
+.case-card { background: white; border-radius: 12px; padding: 0; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); border-top: 4px solid #F5E642; overflow: hidden; }
+.case-header { padding: 18px 20px 14px; cursor: pointer; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+.case-header:hover { background: #f9fdf9; }
+.case-num { font-size: 0.68rem; font-weight: 700; color: #F5E642; background: #1B4D3E; padding: 2px 8px; border-radius: 10px; flex-shrink: 0; margin-top: 2px; }
+.case-title { font-size: 0.95rem; font-weight: 700; color: #1B4D3E; flex: 1; }
+.case-sub { font-size: 0.8rem; color: #5a7a6e; margin-top: 3px; }
+.case-arrow { font-size: 0.8rem; color: #5a7a6e; transition: transform 0.2s; flex-shrink: 0; }
+.case-arrow.open { transform: rotate(180deg); }
+
+.case-body { display: none; padding: 0 20px 20px; border-top: 1px solid #f0f4f0; }
+.case-body.open { display: block; }
+
+.scene { background: #f4fdf5; border-left: 4px solid #1B4D3E; border-radius: 0 8px 8px 0; padding: 14px; margin: 14px 0 10px; font-size: 0.86rem; line-height: 1.7; color: #2d3748; }
+.scene strong { color: #1B4D3E; }
+
+h3.sh { font-size: 0.9rem; color: #1B4D3E; font-weight: 700; margin: 14px 0 8px; }
+
+.opts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.opt { background: #f9fdf9; border: 1.5px solid #c8e6c9; border-radius: 9px; padding: 11px 14px; cursor: pointer; font-size: 0.85rem; line-height: 1.5; transition: all 0.2s; display: flex; gap: 10px; align-items: flex-start; }
+.opt:hover { background: #e8f5e9; border-color: #1B4D3E; }
+.opt .ol { font-weight: 700; color: #1B4D3E; flex-shrink: 0; }
+.opt.correct { background: #f1fdf3; border-color: #2E7D32; font-weight: 600; pointer-events: none; }
+.opt.correct .ol { color: #2E7D32; }
+.opt.wrong { background: #fff0f0; border-color: #c0392b; color: #c0392b; pointer-events: none; }
+.opt.disabled { pointer-events: none; opacity: 0.55; }
+
+.fb { display: none; border-radius: 8px; padding: 12px 14px; font-size: 0.85rem; line-height: 1.6; margin-top: 6px; }
+.fb.ok { background: #f1fdf3; border-left: 4px solid #2E7D32; color: #1b4d20; display: block; }
+.fb.no { background: #fff0f0; border-left: 4px solid #c0392b; color: #6b1a1a; display: block; }
+
+.al { border-radius: 8px; padding: 10px 13px; margin: 10px 0; font-size: 0.84rem; display: flex; gap: 9px; align-items: flex-start; line-height: 1.6; }
+.al.info { background: #f4fdf5; border-left: 4px solid #5CB85C; color: #1B4D3E; }
+.al.warn { background: #fffde7; border-left: 4px solid #F5E642; color: #5a4a00; }
+.al.err { background: #fff0f0; border-left: 4px solid #c0392b; color: #6b1a1a; }
+
+.chat { background: #f4f4f4; border-radius: 10px; padding: 13px; margin: 10px 0; display: flex; flex-direction: column; gap: 7px; }
+.cb { max-width: 78%; padding: 9px 12px; border-radius: 11px; font-size: 0.83rem; line-height: 1.5; }
+.cb.gp { background: #e8f5e9; color: #1B4D3E; align-self: flex-start; border-bottom-left-radius: 2px; }
+.cb.ko { background: #1B4D3E; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+.cb.ko.bad { background: #c0392b; }
+.clbl { font-size: 0.66rem; font-weight: 700; }
+.clbl.gp { color: #2E7D32; }
+.clbl.ko { color: #aaa; align-self: flex-end; text-align: right; }
+
+table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 10px 0; }
+th { background: #1B4D3E; color: white; padding: 8px 10px; text-align: left; }
+td { padding: 8px 10px; border-bottom: 1px solid #e8f5e9; vertical-align: top; }
+tr:nth-child(even) td { background: #f9fdf9; }
+
+.pill { display: inline-block; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 12px; margin-left: 4px; }
+.pill.ok { background: #2E7D32; color: white; }
+.pill.no { background: #c0392b; color: white; }
+.pill.warn { background: #F5E642; color: #1a1a1a; }
+
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+@media(max-width:520px){.two{grid-template-columns:1fr;}}
+.box-ok { background: #f1fdf3; border: 1.5px solid #5CB85C; border-radius: 9px; padding: 12px; font-size: 0.83rem; }
+.box-no { background: #fff5f5; border: 1.5px solid #e53e3e; border-radius: 9px; padding: 12px; font-size: 0.83rem; }
+.box-ok h4 { color: #2E7D32; font-size: 0.85rem; margin-bottom: 6px; }
+.box-no h4 { color: #c0392b; font-size: 0.85rem; margin-bottom: 6px; }
+ul.ul { padding-left: 16px; line-height: 1.8; }
+
+.reset-btn { background: none; border: 1.5px solid #1B4D3E; color: #1B4D3E; padding: 6px 16px; border-radius: 20px; cursor: pointer; font-size: 0.78rem; font-weight: 700; margin-top: 10px; }
+.reset-btn:hover { background: #1B4D3E; color: white; }
+
+footer { background: #1B4D3E; color: #c8e6c9; text-align: center; padding: 14px; font-size: 0.78rem; }
+footer span { color: #F5E642; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <img src="koltin_logo color_vf.png" alt="KOLTIN" onerror="this.style.display='none';document.getElementById('htxt').style.display='block'">
+  <div id="htxt" class="hero-txt">KOLTIN</div>
+  <h1>📚 Casos Prácticos</h1>
+  <p>Situaciones reales para aplicar lo que aprendiste. Analiza, decide y recibe retroalimentación inmediata.</p>
+  <span class="hero-badge">Sales Training 2026</span>
+</div>
+
+<div class="score-bar">
+  <span class="score-lbl">Casos resueltos</span>
+  <div class="score-track"><div class="score-fill" id="sf"></div></div>
+  <span class="score-pct" id="sp">0%</span>
+</div>
+
+<nav>
+  <button class="active" onclick="showCat('antiguedad',this)">📋 Antigüedad</button>
+  <button onclick="showCat('conversaciones',this)">🗣️ Conversaciones</button>
+  <button onclick="showCat('producto',this)">💎 Producto</button>
+  <button onclick="showCat('cierre',this)">🤝 Cierre</button>
+  <button onclick="showCat('mixto',this)">🔀 Casos Mixtos</button>
+</nav>
+
+<main>
+
+<!-- ══════════════════════════════════════════════════════
+     CATEGORÍA: ANTIGÜEDAD
+══════════════════════════════════════════════════════ -->
+<div class="cat active" id="cat-antiguedad">
+  <div class="cat-hdr">
+    <h2>📋 Reconocimiento de Antigüedad</h2>
+    <p>Aplica las reglas del periodo de gracia, documentos requeridos y pagos retroactivos.</p>
+  </div>
+
+  <!-- CASO 1 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">A-01</span>
+      <div><div class="case-title">¿Procede el reconocimiento?</div><div class="case-sub">Periodo de gracia · Nivel básico</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La póliza de la señora Rosario venció el <strong>1 de marzo</strong>. Hoy es <strong>25 de marzo</strong> y quiere contratar Koltin pidiendo reconocimiento de antigüedad. ¿Procede?</div>
+      <h3 class="sh">¿Cuál es la respuesta correcta?</h3>
+      <div class="opts" id="A01opts" data-correct="a">
+        <div class="opt" onclick="answer(this,'A01','a')"><span class="ol">A)</span> Sí procede. Han transcurrido 24 días naturales, está dentro del periodo de gracia de 27 días.</div>
+        <div class="opt" onclick="answer(this,'A01','b')"><span class="ol">B)</span> No procede. La póliza ya está vencida, punto.</div>
+        <div class="opt" onclick="answer(this,'A01','c')"><span class="ol">C)</span> Procede solo si paga en ese mismo momento.</div>
+        <div class="opt" onclick="answer(this,'A01','d')"><span class="ol">D)</span> No procede. Los 27 días son hábiles, no naturales.</div>
+      </div>
+      <div class="fb" id="fbA01"></div>
+      <div class="al info"><span>💡</span><span><strong>Recuerda:</strong> Del 1 al 25 de marzo = 24 días naturales. El límite es 27 días naturales (incluye fines de semana y festivos). ✅ Procede.</span></div>
+    </div>
+  </div>
+
+  <!-- CASO 2 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">A-02</span>
+      <div><div class="case-title">Documentos incompletos</div><div class="case-sub">Documentación · Nivel intermedio</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">Don Ernesto trae su póliza (todas las hojas) y una <strong>captura de pantalla del estado de cuenta</strong> de su banco mostrando el último cargo de su seguro anterior. ¿Puedes proceder con el reconocimiento?</div>
+      <div class="opts" id="A02opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'A02','a')"><span class="ol">A)</span> Sí. La captura muestra claramente el cargo y el nombre del cliente.</div>
+        <div class="opt" onclick="answer(this,'A02','b')"><span class="ol">B)</span> No. Las capturas de pantalla no son comprobantes válidos. Debes solicitar el estado de cuenta oficial en PDF o el comprobante SPEI.</div>
+        <div class="opt" onclick="answer(this,'A02','c')"><span class="ol">C)</span> Sí, pero solo si el monto coincide con el de la póliza.</div>
+        <div class="opt" onclick="answer(this,'A02','d')"><span class="ol">D)</span> Depende de la aseguradora anterior.</div>
+      </div>
+      <div class="fb" id="fbA02"></div>
+    </div>
+  </div>
+
+  <!-- CASO 3 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">A-03</span>
+      <div><div class="case-title">Pago retroactivo mensual</div><div class="case-sub">Pagos · Nivel intermedio</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La póliza de doña Carmen venció el <strong>15 de febrero</strong>. Hoy, <strong>3 de marzo</strong>, realiza su pago para contratar Koltin con plan mensual y reconocimiento de antigüedad. ¿Qué periodo cubre el primer pago y cuándo es el próximo cobro?</div>
+      <div class="opts" id="A03opts" data-correct="c">
+        <div class="opt" onclick="answer(this,'A03','a')"><span class="ol">A)</span> Cubre del 3 de marzo al 3 de abril. Próximo cobro: 3 de abril.</div>
+        <div class="opt" onclick="answer(this,'A03','b')"><span class="ol">B)</span> Cubre del 15 de febrero al 15 de abril. Próximo cobro: 15 de abril.</div>
+        <div class="opt" onclick="answer(this,'A03','c')"><span class="ol">C)</span> Cubre del 15 de febrero al 15 de marzo. Próximo cobro: 15 de marzo.</div>
+        <div class="opt" onclick="answer(this,'A03','d')"><span class="ol">D)</span> No se puede procesar porque el pago es retroactivo.</div>
+      </div>
+      <div class="fb" id="fbA03"></div>
+      <div class="al warn"><span>⚠️</span><span>El pago retroactivo siempre cubre desde la <strong>fecha de vencimiento original</strong>, no desde el día del pago.</span></div>
+    </div>
+  </div>
+
+  <!-- CASO 4 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">A-04</span>
+      <div><div class="case-title">Póliza de Banorte</div><div class="case-sub">Casos especiales · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">El señor Alberto viene con su póliza de <strong>Banorte</strong>. Trae la carátula con la prima total pero <strong>no tiene el endoso de antigüedad</strong> (normalmente en la página 7). Quiere que se le respete su antigüedad de 8 años. ¿Qué haces?</div>
+      <div class="opts" id="A04opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'A04','a')"><span class="ol">A)</span> No puedes proceder sin el endoso. Le dices que regrese cuando lo tenga.</div>
+        <div class="opt" onclick="answer(this,'A04','b')"><span class="ol">B)</span> Puedes proceder solo si el señor Alberto acepta que la fecha de antigüedad será la "Fecha de Emisión" de la póliza, no la fecha real de antigüedad.</div>
+        <div class="opt" onclick="answer(this,'A04','c')"><span class="ol">C)</span> Solicitas carta de antigüedad directamente a Banorte.</div>
+        <div class="opt" onclick="answer(this,'A04','d')"><span class="ol">D)</span> Con la carátula es suficiente para validar 8 años de antigüedad.</div>
+      </div>
+      <div class="fb" id="fbA04"></div>
+    </div>
+  </div>
+
+  <!-- CASO 5 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">A-05</span>
+      <div><div class="case-title">Antigüedad de póliza grupal</div><div class="case-sub">Documentación · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La señora Patricia tuvo seguro <strong>colectivo de su empresa</strong> durante 12 años. Acaba de jubilarse. Trae: carta de antigüedad (con fecha de emisión de hace 45 días) y su recibo de nómina del mes pasado. ¿Qué documentos son válidos y cuál necesitas reemplazar?</div>
+      <div class="opts" id="A05opts" data-correct="c">
+        <div class="opt" onclick="answer(this,'A05','a')"><span class="ol">A)</span> Todo está en orden. Puedes proceder.</div>
+        <div class="opt" onclick="answer(this,'A05','b')"><span class="ol">B)</span> Solo necesitas la carta de antigüedad. El recibo de nómina no es necesario para jubilados.</div>
+        <div class="opt" onclick="answer(this,'A05','c')"><span class="ol">C)</span> La carta de antigüedad tiene más de 30 días de emisión — no es válida. Necesitas solicitarle una nueva. El recibo de nómina sí es válido como vínculo laboral.</div>
+        <div class="opt" onclick="answer(this,'A05','d')"><span class="ol">D)</span> Al estar jubilada ya no aplica reconocimiento de antigüedad de póliza grupal.</div>
+      </div>
+      <div class="fb" id="fbA05"></div>
+    </div>
+  </div>
+
+  <!-- CASO 6 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">A-06</span>
+      <div><div class="case-title">Constancia vs Carta de Antigüedad</div><div class="case-sub">Documentación · Nivel intermedio</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">El señor Víctor trae un documento de Metlife que dice "<strong>Constancia de Asegurabilidad</strong>" con su nombre y que confirma que actualmente tiene un seguro activo. ¿Es suficiente para el reconocimiento de antigüedad?</div>
+      <div class="opts" id="A06opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'A06','a')"><span class="ol">A)</span> Sí, confirma que está asegurado actualmente.</div>
+        <div class="opt" onclick="answer(this,'A06','b')"><span class="ol">B)</span> No. La Constancia de Asegurabilidad solo confirma que está asegurado hoy, pero no dice desde cuándo. Se necesita la Carta de Antigüedad.</div>
+        <div class="opt" onclick="answer(this,'A06','c')"><span class="ol">C)</span> Sí, si además trae la póliza vigente.</div>
+        <div class="opt" onclick="answer(this,'A06','d')"><span class="ol">D)</span> Depende — si Metlife lo emitió, es válido.</div>
+      </div>
+      <div class="fb" id="fbA06"></div>
+    </div>
+  </div>
+
+  <!-- CASO 7 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">A-07</span>
+      <div><div class="case-title">Pago trimestral fuera de gracia</div><div class="case-sub">Pagos · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La póliza del señor Marcos venció el <strong>1 de enero</strong>. Se contacta el <strong>10 de febrero</strong> (día 40) queriendo contratar con plan trimestral y reconocimiento de antigüedad de 6 años. ¿Qué le dices?</div>
+      <div class="opts" id="A07opts" data-correct="a">
+        <div class="opt" onclick="answer(this,'A07','a')"><span class="ol">A)</span> El periodo de gracia venció el día 27 (28 de enero). No se puede respetar la antigüedad. Iniciará con periodos de espera.</div>
+        <div class="opt" onclick="answer(this,'A07','b')"><span class="ol">B)</span> Se puede hacer una excepción por los 6 años de antigüedad.</div>
+        <div class="opt" onclick="answer(this,'A07','c')"><span class="ol">C)</span> Puedes aplicar el reconocimiento si firma hoy mismo.</div>
+        <div class="opt" onclick="answer(this,'A07','d')"><span class="ol">D)</span> El periodo de gracia es de 30 días, así que aún está dentro.</div>
+      </div>
+      <div class="fb" id="fbA07"></div>
+      <div class="al err"><span>🚨</span><span>Día 40 > 27 días de gracia. Sin excepciones, sin importar los años de antigüedad. Comunicar con empatía pero con claridad.</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CATEGORÍA: CONVERSACIONES
+══════════════════════════════════════════════════════ -->
+<div class="cat" id="cat-conversaciones">
+  <div class="cat-hdr">
+    <h2>🗣️ Conversaciones Humanas</h2>
+    <p>Voz, tono, objeciones y escucha activa. ¿Qué harías en estas situaciones?</p>
+  </div>
+
+  <!-- CASO 1 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">C-01</span>
+      <div><div class="case-title">¿Cuál es la respuesta correcta?</div><div class="case-sub">Objeción de precio · Nivel básico</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La señora Consuelo te dice: <strong>"Mira, me gustó todo lo que me explicaste, pero la verdad está muy caro. No creo poder pagarlo."</strong> Llevan 25 minutos hablando y ha mostrado mucho interés.</div>
+      <h3 class="sh">¿Cuál es la mejor respuesta?</h3>
+      <div class="opts" id="C01opts" data-correct="c">
+        <div class="opt" onclick="answer(this,'C01','a')"><span class="ol">A)</span> "Entiendo, cuando mejore su situación económica nos llama."</div>
+        <div class="opt" onclick="answer(this,'C01','b')"><span class="ol">B)</span> "No es caro comparado con otras aseguradoras, créame."</div>
+        <div class="opt" onclick="answer(this,'C01','c')"><span class="ol">C)</span> "Entiendo perfectamente. ¿Me permite una pregunta? Si sus gastos del hogar subieran inesperadamente, ¿qué haría usted?" [Escucha]. "Con la salud es igual: si es prioridad, encontramos la forma. ¿Le gustaría revisar juntos qué plan se ajusta mejor a su presupuesto?"</div>
+        <div class="opt" onclick="answer(this,'C01','d')"><span class="ol">D)</span> "Tenemos una promoción especial solo para hoy que podría ayudarle."</div>
+      </div>
+      <div class="fb" id="fbC01"></div>
+    </div>
+  </div>
+
+  <!-- CASO 2 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">C-02</span>
+      <div><div class="case-title">Analiza esta conversación</div><div class="case-sub">Tono y voz Koltin · Nivel intermedio</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">Lee esta conversación e identifica <strong>todos los errores</strong> del Kolter:</div>
+      <div class="chat">
+        <span class="clbl gp">👴 Gran Persona</span>
+        <div class="cb gp">"Buenas tardes, me recomendaron que los llamara."</div>
+        <span class="clbl ko" style="align-self:flex-end;">Kolter</span>
+        <div class="cb ko bad">"¡Hola! Sí, mira, nuestro seguro es el mejor del mercado. Si no contratas hoy te pierdes el precio especial que tenemos. Nuestro deducible es muy bajo y nuestros tiempos de espera son cortísimos. ¿Te animas?"</div>
+      </div>
+      <h3 class="sh">¿Qué errores cometió el Kolter? (selecciona el más completo)</h3>
+      <div class="opts" id="C02opts" data-correct="d">
+        <div class="opt" onclick="answer(this,'C02','a')"><span class="ol">A)</span> Solo usó "tú" en lugar de "usted".</div>
+        <div class="opt" onclick="answer(this,'C02','b')"><span class="ol">B)</span> Usó urgencia artificial y tuteo.</div>
+        <div class="opt" onclick="answer(this,'C02','c')"><span class="ol">C)</span> Dijo "nuestro seguro", usó urgencia artificial y tuteo.</div>
+        <div class="opt" onclick="answer(this,'C02','d')"><span class="ol">D)</span> Múltiples errores: dijo "nuestro seguro" y "nuestro deducible" (debe decir "el seguro"/"el deducible"), usó urgencia artificial ("si no contratas hoy te pierdes"), tuteó a la GP sin permiso, y no escuchó ni preguntó nada.</div>
+      </div>
+      <div class="fb" id="fbC02"></div>
+    </div>
+  </div>
+
+  <!-- CASO 3 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">C-03</span>
+      <div><div class="case-title">"Mi hijo decide" — ¿cómo avanzas?</div><div class="case-sub">Objeciones · Nivel intermedio</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">Llevas 30 minutos con la señora Gloria. Está muy interesada, hace preguntas, asiente constantemente. Al final dice: <strong>"Todo suena muy bien, pero tengo que consultarlo con mi hijo antes de tomar una decisión."</strong></div>
+      <div class="opts" id="C03opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'C03','a')"><span class="ol">A)</span> "Claro, hablen y cuando quieran nos llaman." [Terminas la llamada]</div>
+        <div class="opt" onclick="answer(this,'C03','b')"><span class="ol">B)</span> "Qué bueno que su hijo se involucra, eso habla muy bien de su familia. ¿Le gustaría que coordinemos una llamada donde participen los dos? Así resolvemos todas las dudas juntos y él también tiene toda la información."</div>
+        <div class="opt" onclick="answer(this,'C03','c')"><span class="ol">C)</span> "Señora Gloria, usted puede tomar sus propias decisiones, ¿no?"</div>
+        <div class="opt" onclick="answer(this,'C03','d')"><span class="ol">D)</span> "Le mando un PDF con la información para que se lo muestre a su hijo."</div>
+      </div>
+      <div class="fb" id="fbC03"></div>
+    </div>
+  </div>
+
+  <!-- CASO 4 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">C-04</span>
+      <div><div class="case-title">Identifica la objeción verdadera vs falsa</div><div class="case-sub">Tipos de objeción · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">El señor Roberto dice: <strong>"Lo voy a pensar y le aviso."</strong> Llevas 40 minutos hablando. Respondió con entusiasmo al principio, luego se puso más callado cuando explicaste los costos. ¿Qué tipo de objeción es y cuál es el mejor siguiente paso?</div>
+      <div class="opts" id="C04opts" data-correct="c">
+        <div class="opt" onclick="answer(this,'C04','a')"><span class="ol">A)</span> Es una objeción verdadera. Debo respetar su tiempo y esperar su llamada.</div>
+        <div class="opt" onclick="answer(this,'C04','b')"><span class="ol">B)</span> Es una objeción de tiempo. Debo agendar un seguimiento para mañana.</div>
+        <div class="opt" onclick="answer(this,'C04','c')"><span class="ol">C)</span> Probablemente es una objeción falsa relacionada con el precio. Explorar con empatía: "Por supuesto, es una decisión importante. Para poder ayudarle mejor, ¿qué es lo que más le genera duda?"</div>
+        <div class="opt" onclick="answer(this,'C04','d')"><span class="ol">D)</span> Es una objeción verdadera. No debo presionar — terminar la llamada profesionalmente.</div>
+      </div>
+      <div class="fb" id="fbC04"></div>
+    </div>
+  </div>
+
+  <!-- CASO 5 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">C-05</span>
+      <div><div class="case-title">"No creo en los seguros"</div><div class="case-sub">Desconfianza · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La señora Amparo te dice desde el inicio: <strong>"Mire, yo no creo en los seguros. Siempre que uno los necesita, encuentran la forma de no pagar."</strong> ¿Cuál es el primer paso correcto?</div>
+      <div class="opts" id="C05opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'C05','a')"><span class="ol">A)</span> Explicarle inmediatamente todos los beneficios de Koltin y BBVA Seguros Salud.</div>
+        <div class="opt" onclick="answer(this,'C05','b')"><span class="ol">B)</span> "Agradezco que me lo comparta, señora Amparo. ¿Me podría contar si ha tenido alguna experiencia difícil con algún seguro en el pasado?" [Escuchar antes de responder]</div>
+        <div class="opt" onclick="answer(this,'C05','c')"><span class="ol">C)</span> "Con todo respeto, BBVA Seguros Salud es diferente a lo que usted conoce."</div>
+        <div class="opt" onclick="answer(this,'C05','d')"><span class="ol">D)</span> "Entiendo su desconfianza. ¿Le gustaría que le enviara testimonios de otros clientes?"</div>
+      </div>
+      <div class="fb" id="fbC05"></div>
+    </div>
+  </div>
+
+  <!-- CASO 6 — REDACTA TÚ -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">C-06</span>
+      <div><div class="case-title">Escenario abierto — Redacta tu respuesta</div><div class="case-sub">Reflexión · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">El señor Guillermo dice: <strong>"La suma asegurada de $5 millones me parece muy poca. Un amigo mío tuvo cáncer y gastó más de $8 millones."</strong></div>
+      <h3 class="sh">¿Cuáles son los argumentos clave que usarías? (reflexión abierta)</h3>
+      <div class="al info"><span>📌</span><span>No hay una sola respuesta correcta. Usa los siguientes puntos como guía para estructurar tu respuesta:</span></div>
+      <ul class="ul" style="font-size:0.85rem;line-height:1.9;color:#2d3748;margin-top:8px;">
+        <li>Según la Condusef, solo 4 de cada 10,000 eventos médicos superan los $800,000.</li>
+        <li>Cáncer de mama promedio: $2.6 MDP | Cáncer de pulmón: $2.4 MDP | Cáncer de próstata: $1.4 MDP.</li>
+        <li>La membresía incluye acompañamiento médico que ayuda a optimizar el uso de la suma asegurada.</li>
+        <li>Tener $5 MDP de respaldo es mucho mejor que no tener nada.</li>
+        <li>Existe la opción de Membresía 3 (50-64 años) con $20 MDP de suma asegurada.</li>
+      </ul>
+      <div class="al warn" style="margin-top:12px;"><span>💬</span><span>Practica respondiendo este caso en voz alta con un compañero antes de tu próxima llamada real.</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CATEGORÍA: PRODUCTO
+══════════════════════════════════════════════════════ -->
+<div class="cat" id="cat-producto">
+  <div class="cat-hdr">
+    <h2>💎 Producto y Membresía</h2>
+    <p>Aplica tu conocimiento sobre membresías, rangos de edad, SGMM y tiempos de espera.</p>
+  </div>
+
+  <!-- CASO 1 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">P-01</span>
+      <div><div class="case-title">¿Qué membresía le conviene?</div><div class="case-sub">Tipos de membresía · Nivel básico</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La señora Elena tiene <strong>62 años</strong>. Quiere la mayor cobertura posible y está dispuesta a pagar más. Tiene buena salud y no ha tenido seguros anteriores. ¿Qué membresía le recomiendas y por qué?</div>
+      <div class="opts" id="P01opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'P01','a')"><span class="ol">A)</span> Membresía 1 (50-64): $5 MDP, $100K deducible, nivel alto. Es la más económica.</div>
+        <div class="opt" onclick="answer(this,'P01','b')"><span class="ol">B)</span> Membresía 3 (50-64): $20 MDP, $30K deducible, nivel alto. Es la última oportunidad de contratar $20 MDP de suma asegurada antes de los 65.</div>
+        <div class="opt" onclick="answer(this,'P01','c')"><span class="ol">C)</span> Esperar a los 65 para obtener mejores beneficios gerontológicos.</div>
+        <div class="opt" onclick="answer(this,'P01','d')"><span class="ol">D)</span> Membresía Base (50-64): $2 MDP. Si no tiene antecedentes de salud, no necesita más.</div>
+      </div>
+      <div class="fb" id="fbP01"></div>
+      <div class="al warn"><span>⚠️</span><span>Los 50-64 años son la <strong>última ventana</strong> para contratar $20 MDP. Una vez cumplidos 65, la renovación es vitalicia con el mismo monto, pero ya no se puede aumentar.</span></div>
+    </div>
+  </div>
+
+  <!-- CASO 2 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">P-02</span>
+      <div><div class="case-title">Explica el deducible con un ejemplo</div><div class="case-sub">SGMM · Nivel básico</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">El señor Arturo tiene la Membresía 2 (50-64) con <strong>$30,000 de deducible y coaseguro 20% topado a $20,000</strong>. Se hospitaliza por una cirugía de rodilla que cuesta <strong>$200,000</strong>. ¿Cuánto paga él y cuánto cubre el seguro?</div>
+      <div class="opts" id="P02opts" data-correct="c">
+        <div class="opt" onclick="answer(this,'P02','a')"><span class="ol">A)</span> Él paga $30,000. El seguro cubre $170,000.</div>
+        <div class="opt" onclick="answer(this,'P02','b')"><span class="ol">B)</span> Él paga $50,000 (30K deducible + 20K coaseguro). El seguro cubre $150,000.</div>
+        <div class="opt" onclick="answer(this,'P02','c')"><span class="ol">C)</span> Él paga $30,000 (deducible) + $34,000 (20% de $170,000, pero el coaseguro está topado a $20,000, entonces paga $20,000) = $50,000. El seguro cubre $150,000.</div>
+        <div class="opt" onclick="answer(this,'P02','d')"><span class="ol">D)</span> Él no paga nada. El seguro cubre todo.</div>
+      </div>
+      <div class="fb" id="fbP02"></div>
+      <div class="al info"><span>💡</span><span>Cálculo: $200K total − $30K deducible = $170K restante. El 20% de $170K = $34K, pero el coaseguro está <strong>topado a $20K</strong>. Total del cliente: $30K + $20K = <strong>$50,000</strong>. El seguro cubre: <strong>$150,000</strong>.</span></div>
+    </div>
+  </div>
+
+  <!-- CASO 3 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">P-03</span>
+      <div><div class="case-title">Tiempos de espera y antigüedad</div><div class="case-sub">SGMM · Nivel intermedio</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La señora Beatriz, de 58 años, tiene <strong>diabetes tipo 2</strong> diagnosticada hace 5 años. Tiene póliza de AXXA con 7 años de antigüedad continua y documentos completos. ¿Cómo le explicas su situación respecto a los tiempos de espera?</div>
+      <div class="opts" id="P03opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'P03','a')"><span class="ol">A)</span> La diabetes es una preexistencia, por lo que quedará excluida permanentemente de cobertura.</div>
+        <div class="opt" onclick="answer(this,'P03','b')"><span class="ol">B)</span> Gracias a sus 7 años de antigüedad continua comprobada, los tiempos de espera se eliminan. La diabetes puede estar cubierta desde el inicio, sujeto a las condiciones del SGMM.</div>
+        <div class="opt" onclick="answer(this,'P03','c')"><span class="ol">C)</span> La diabetes siempre tiene un tiempo de espera de 2 años sin importar la antigüedad.</div>
+        <div class="opt" onclick="answer(this,'P03','d')"><span class="ol">D)</span> La antigüedad no aplica para preexistencias.</div>
+      </div>
+      <div class="fb" id="fbP03"></div>
+    </div>
+  </div>
+
+  <!-- CASO 4 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">P-04</span>
+      <div><div class="case-title">¿Cómo hablar de Koltin?</div><div class="case-sub">Lenguaje correcto · Nivel básico</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">Un guía nuevo te dice: <strong>"Voy a decirle al cliente que nuestro seguro es más barato, que nuestros tiempos de espera son muy cortos y que si no contrata hoy puede subir el precio."</strong> ¿Qué le corriges?</div>
+      <div class="opts" id="P04opts" data-correct="d">
+        <div class="opt" onclick="answer(this,'P04','a')"><span class="ol">A)</span> Solo lo del precio — lo demás está bien.</div>
+        <div class="opt" onclick="answer(this,'P04','b')"><span class="ol">B)</span> Lo de "nuestro seguro" — debe decir "el seguro".</div>
+        <div class="opt" onclick="answer(this,'P04','c')"><span class="ol">C)</span> Lo de "nuestro seguro" y la urgencia artificial del precio.</div>
+        <div class="opt" onclick="answer(this,'P04','d')"><span class="ol">D)</span> Todo: 1) "Nuestro seguro" → "el seguro" o "la membresía". 2) "Nuestros tiempos de espera" → "los tiempos de espera que contiene el seguro". 3) Urgencia artificial nunca se usa en Koltin.</div>
+      </div>
+      <div class="fb" id="fbP04"></div>
+    </div>
+  </div>
+
+  <!-- CASO 5 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">P-05</span>
+      <div><div class="case-title">Membresía para 70 años</div><div class="case-sub">Tipos de membresía · Nivel intermedio</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">El señor Jorge tiene <strong>70 años</strong> y nunca ha tenido seguro de gastos médicos. Pregunta: "¿Puedo contratar aún? ¿Qué tan buena cobertura puedo obtener?" ¿Cómo le respondes?</div>
+      <div class="opts" id="P05opts" data-correct="c">
+        <div class="opt" onclick="answer(this,'P05','a')"><span class="ol">A)</span> "Lamentablemente ya no puede contratar suma asegurada alta después de los 65."</div>
+        <div class="opt" onclick="answer(this,'P05','b')"><span class="ol">B)</span> "Puede contratar, pero tendrá tiempos de espera de 2 años para todas las enfermedades."</div>
+        <div class="opt" onclick="answer(this,'P05','c')"><span class="ol">C)</span> "Claro que puede contratar. Para 65+ tenemos membresías con hasta $5 MDP de suma asegurada, acompañamiento gerontológico, Estudio de Longevidad, videoconsultas y Comunidad Koltin. Y como es su primera vez, iniciará con tiempos de espera normales del seguro."</div>
+        <div class="opt" onclick="answer(this,'P05','d')"><span class="ol">D)</span> "Puede contratar, pero ya no aplica el SGMM a partir de los 70 años."</div>
+      </div>
+      <div class="fb" id="fbP05"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CATEGORÍA: CIERRE
+══════════════════════════════════════════════════════ -->
+<div class="cat" id="cat-cierre">
+  <div class="cat-hdr">
+    <h2>🤝 Cierre de Venta</h2>
+    <p>Identifica buen cierre vs mal cierre y elige la técnica correcta para cada situación.</p>
+  </div>
+
+  <!-- CASO 1 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">CI-01</span>
+      <div><div class="case-title">¿Buen o mal cierre?</div><div class="case-sub">Análisis · Nivel básico</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">Al final de una llamada de 35 minutos, el Kolter dice: <strong>"Bueno, ya le expliqué todo. Usted decide. Si quiere llámenos."</strong> ¿Cómo evalúas este cierre?</div>
+      <div class="opts" id="CI01opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'CI01','a')"><span class="ol">A)</span> Es un buen cierre. Respeta la autonomía del cliente.</div>
+        <div class="opt" onclick="answer(this,'CI01','b')"><span class="ol">B)</span> Es un mal cierre. No hay pregunta de cierre, no hay resumen de beneficios, no hay próximo paso claro. Deja al cliente sin dirección.</div>
+        <div class="opt" onclick="answer(this,'CI01','c')"><span class="ol">C)</span> Es aceptable si el cliente ya tiene toda la información.</div>
+        <div class="opt" onclick="answer(this,'CI01','d')"><span class="ol">D)</span> Es un buen cierre porque no presiona.</div>
+      </div>
+      <div class="fb" id="fbCI01"></div>
+    </div>
+  </div>
+
+  <!-- CASO 2 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">CI-02</span>
+      <div><div class="case-title">Elige la técnica correcta</div><div class="case-sub">Técnicas de cierre · Nivel intermedio</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La señora Margarita pregunta: <strong>"¿Y si pago todo el año junto sale más barato?"</strong> Llevan 40 minutos hablando y ya está lista para decidir. ¿Qué técnica de cierre aplicas y cómo?</div>
+      <div class="opts" id="CI02opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'CI02','a')"><span class="ol">A)</span> Cierre resumen: "Para resumir todos los beneficios que platicamos..."</div>
+        <div class="opt" onclick="answer(this,'CI02','b')"><span class="ol">B)</span> Cierre puercoespín: Aprovechar su propia pregunta para confirmar el cierre. "¡Claro! Al pagar anual evita el recargo por pago fraccionado: 12% mensual, 6% trimestral, 4% semestral. Es la forma más eficiente. ¿Le gustaría que iniciáramos con el plan anual?"</div>
+        <div class="opt" onclick="answer(this,'CI02','c')"><span class="ol">C)</span> Cierre por amarre: "¿Verdad que la membresía Koltin tiene muchos beneficios?"</div>
+        <div class="opt" onclick="answer(this,'CI02','d')"><span class="ol">D)</span> Cierre por costo de oportunidad: Recordarle lo que cuesta no estar asegurado.</div>
+      </div>
+      <div class="fb" id="fbCI02"></div>
+    </div>
+  </div>
+
+  <!-- CASO 3 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">CI-03</span>
+      <div><div class="case-title">¿Cuándo NO cerrar?</div><div class="case-sub">Criterio · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">El señor Rodrigo, de 72 años, lleva 45 minutos en llamada. Parece confundido, no recuerda lo que le explicaste hace 10 minutos, pregunta lo mismo varias veces y dice que "tiene que pensar". Su hija interrumpe la llamada y dice que "papá no está bien hoy". ¿Qué haces?</div>
+      <div class="opts" id="CI03opts" data-correct="c">
+        <div class="opt" onclick="answer(this,'CI03','a')"><span class="ol">A)</span> Continuar el cierre — ya llevas mucho tiempo y está casi listo.</div>
+        <div class="opt" onclick="answer(this,'CI03','b')"><span class="ol">B)</span> Pedirle a la hija que tome la decisión por él en ese momento.</div>
+        <div class="opt" onclick="answer(this,'CI03','c')"><span class="ol">C)</span> No cerrar. Reconocer que no es el momento adecuado. Decirle con calidez que con gusto les llamas otro día cuando estén los dos disponibles. Un buen Kolter sabe cuándo NO cerrar.</div>
+        <div class="opt" onclick="answer(this,'CI03','d')"><span class="ol">D)</span> Terminar la llamada sin proponer un siguiente paso.</div>
+      </div>
+      <div class="fb" id="fbCI03"></div>
+      <div class="al info"><span>💡</span><span>Saber cuándo <strong>no cerrar</strong> es parte del criterio Koltin. La confianza del cliente vale más que una venta forzada.</span></div>
+    </div>
+  </div>
+
+  <!-- CASO 4 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">CI-04</span>
+      <div><div class="case-title">Señales de compra — ¿las identificas?</div><div class="case-sub">Escucha activa · Nivel intermedio</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">Durante la llamada, la señora Irene ha dicho: "Ajá... claro... sí, eso tiene sentido... ¿y el pago se puede hacer con tarjeta? ¿Cuándo iniciaría la cobertura?" ¿Qué significan estas señales y qué haces?</div>
+      <div class="opts" id="CI04opts" data-correct="a">
+        <div class="opt" onclick="answer(this,'CI04','a')"><span class="ol">A)</span> Son señales claras de compra. Responder sus preguntas con seguridad y avanzar hacia el cierre: "Sí, aceptamos tarjeta. La cobertura inicia desde la contratación. ¿Le gustaría que iniciáramos el proceso ahora?"</div>
+        <div class="opt" onclick="answer(this,'CI04','b')"><span class="ol">B)</span> Son preguntas informativas. Continuar explicando beneficios antes de cerrar.</div>
+        <div class="opt" onclick="answer(this,'CI04','c')"><span class="ol">C)</span> Pueden ser señales de compra, pero es mejor esperar a que ella lo diga explícitamente.</div>
+        <div class="opt" onclick="answer(this,'CI04','d')"><span class="ol">D)</span> No son señales de compra — solo está siendo amable.</div>
+      </div>
+      <div class="fb" id="fbCI04"></div>
+    </div>
+  </div>
+
+  <!-- CASO 5 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">CI-05</span>
+      <div><div class="case-title">Reconstruye el cierre correcto</div><div class="case-sub">Síntesis · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">Llevas 30 minutos con el señor Enrique, 61 años. Ha dicho "sí" varias veces, preguntó por los pagos y comentó que "su esposa también necesitaría algo así". ¿Cuál es el cierre más completo y adecuado?</div>
+      <div class="opts" id="CI05opts" data-correct="d">
+        <div class="opt" onclick="answer(this,'CI05','a')"><span class="ol">A)</span> "Muy bien señor Enrique, ¿me da sus datos para proceder?"</div>
+        <div class="opt" onclick="answer(this,'CI05','b')"><span class="ol">B)</span> "¿Está listo para contratar o necesita más tiempo?"</div>
+        <div class="opt" onclick="answer(this,'CI05','c')"><span class="ol">C)</span> "Para resumir, tenemos el SGMM, videoconsultas y la comunidad. ¿Le parece bien?"</div>
+        <div class="opt" onclick="answer(this,'CI05','d')"><span class="ol">D)</span> "Para resumir lo que platicamos: SGMM con hasta $20 MDP, Estudio de Longevidad, videoconsultas, Comunidad Koltin y acompañamiento en todo momento. También me comentó que su esposa podría beneficiarse — con gusto le ayudo a explorar una opción para ella también. ¿Le parece si iniciamos el proceso para usted ahora?"</div>
+      </div>
+      <div class="fb" id="fbCI05"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══════════════════════════════════════════════════════
+     CATEGORÍA: MIXTOS
+══════════════════════════════════════════════════════ -->
+<div class="cat" id="cat-mixto">
+  <div class="cat-hdr">
+    <h2>🔀 Casos Mixtos</h2>
+    <p>Situaciones complejas que combinan producto, antigüedad y conversación. Los más cercanos a la realidad.</p>
+  </div>
+
+  <!-- CASO 1 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">M-01</span>
+      <div><div class="case-title">Caso completo — De la llamada al cierre</div><div class="case-sub">Integración · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La señora Lucía, 59 años, llama. Tiene póliza de MAPFRE vencida hace <strong>20 días</strong>. Su antigüedad está en la <strong>página 6</strong> de la póliza. Al escuchar el precio dice: <strong>"Está un poco caro, además mi esposo tiene que enterarse."</strong> Al final pregunta: <strong>"¿Y si pago anual hay descuento?"</strong></div>
+      <h3 class="sh">¿Cuál es la secuencia correcta de acciones?</h3>
+      <div class="opts" id="M01opts" data-correct="c">
+        <div class="opt" onclick="answer(this,'M01','a')"><span class="ol">A)</span> Confirmar antigüedad, ignorar las objeciones y cerrar rápido antes de que cuelgue.</div>
+        <div class="opt" onclick="answer(this,'M01','b')"><span class="ol">B)</span> Decirle que la antigüedad ya venció y que no puede reconocerse.</div>
+        <div class="opt" onclick="answer(this,'M01','c')"><span class="ol">C)</span> 1) Confirmar que 20 días está dentro del periodo de gracia ✅. 2) Recordar que la antigüedad de MAPFRE está en páginas 6-7. 3) Validar la objeción de precio con empatía. 4) Para "mi esposo tiene que enterarse" → proponer llamada conjunta. 5) Aprovechar la pregunta del pago anual como puercoespín para cerrar.</div>
+        <div class="opt" onclick="answer(this,'M01','d')"><span class="ol">D)</span> Resolver solo la pregunta del pago anual e ignorar las objeciones previas.</div>
+      </div>
+      <div class="fb" id="fbM01"></div>
+    </div>
+  </div>
+
+  <!-- CASO 2 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">M-02</span>
+      <div><div class="case-title">Póliza extranjera — ¿qué haces?</div><div class="case-sub">Antigüedad + Producto · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">El señor Fernando vivió en EE.UU. 10 años y tenía seguro con <strong>Best Doctors Insurance</strong>. Regresó a México hace 2 meses y quiere que le reconozcan sus 10 años de antigüedad. ¿Qué le dices?</div>
+      <div class="opts" id="M02opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'M02','a')"><span class="ol">A)</span> Sí se puede reconocer. 10 años es mucho tiempo y el cliente tiene documentos.</div>
+        <div class="opt" onclick="answer(this,'M02','b')"><span class="ol">B)</span> No se puede. BBVA Seguros Salud solo reconoce antigüedades de aseguradoras extranjeras registradas en la CONDUSEF. Best Doctors Insurance no está registrada. Se lo comunicamos con empatía y le explicamos que iniciará con tiempos de espera normales.</div>
+        <div class="opt" onclick="answer(this,'M02','c')"><span class="ol">C)</span> Se puede reconocer parcialmente — 5 de los 10 años.</div>
+        <div class="opt" onclick="answer(this,'M02','d')"><span class="ol">D)</span> Hay que verificar caso por caso con operaciones antes de responder.</div>
+      </div>
+      <div class="fb" id="fbM02"></div>
+    </div>
+  </div>
+
+  <!-- CASO 3 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">M-03</span>
+      <div><div class="case-title">El nombre no coincide</div><div class="case-sub">Documentación · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La señora <strong>María del Carmen Flores de López</strong> trae su póliza de Seguros Atlas donde aparece como <strong>"Ma. Carmen Flores"</strong>. Su INE dice su nombre completo. ¿Qué haces?</div>
+      <div class="opts" id="M03opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'M03','a')"><span class="ol">A)</span> Proceder. Es claramente la misma persona.</div>
+        <div class="opt" onclick="answer(this,'M03','b')"><span class="ol">B)</span> Solicitar carta aclaratoria con fecha de emisión no mayor a 30 días, donde se explique que ambos nombres corresponden a la misma persona. La discrepancia podría causar que BBVA SS niegue el servicio en un siniestro.</div>
+        <div class="opt" onclick="answer(this,'M03','c')"><span class="ol">C)</span> Solicitar nueva póliza corregida a Seguros Atlas.</div>
+        <div class="opt" onclick="answer(this,'M03','d')"><span class="ol">D)</span> Proceder si el número de póliza coincide con el comprobante de pago.</div>
+      </div>
+      <div class="fb" id="fbM03"></div>
+    </div>
+  </div>
+
+  <!-- CASO 4 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">M-04</span>
+      <div><div class="case-title">Manejo completo de llamada difícil</div><div class="case-sub">Integración · Nivel experto</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">El señor Aurelio, 67 años, llama molesto: <strong>"Ya me llamaron 3 veces esta semana. No me interesa ningún seguro. Los seguros son un robo."</strong> Tiene póliza vigente de BBVA Seguros Salud pero lleva 3 años con ella. ¿Cómo manejas la llamada?</div>
+      <div class="opts" id="M04opts" data-correct="c">
+        <div class="opt" onclick="answer(this,'M04','a')"><span class="ol">A)</span> Disculparte y terminar la llamada inmediatamente.</div>
+        <div class="opt" onclick="answer(this,'M04','b')"><span class="ol">B)</span> Explicarle que Koltin es diferente a lo que conoce y listar los beneficios.</div>
+        <div class="opt" onclick="answer(this,'M04','c')"><span class="ol">C)</span> Primero validar su molestia genuinamente: "Señor Aurelio, tiene toda la razón y le pido disculpas por las llamadas repetidas. Eso no debió pasar." Luego, con calma, preguntar: "¿Me permite preguntarle qué es lo que más le ha molestado de su experiencia con seguros?" Escuchar. Solo si hay apertura, continuar.</div>
+        <div class="opt" onclick="answer(this,'M04','d')"><span class="ol">D)</span> Decirle que lo retiramos de la base de datos y cerrar la llamada.</div>
+      </div>
+      <div class="fb" id="fbM04"></div>
+      <div class="al info"><span>💡</span><span>A veces la mejor acción es <strong>no vender en esa llamada</strong>. Generar confianza y dejar una buena impresión puede abrir una puerta futura.</span></div>
+    </div>
+  </div>
+
+  <!-- CASO 5 -->
+  <div class="case-card">
+    <div class="case-header" onclick="toggleCase(this)">
+      <span class="case-num">M-05</span>
+      <div><div class="case-title">Axa — ¿cuál antigüedad tomas?</div><div class="case-sub">Antigüedad + Documentación · Nivel avanzado</div></div>
+      <span class="case-arrow">▼</span>
+    </div>
+    <div class="case-body">
+      <div class="scene">La señora Esperanza trae su póliza de <strong>Axa</strong>. En la carátula (página 1) aparece la fecha de antigüedad con Axa: <strong>2019</strong>. En la página 2 aparece la antigüedad nacional: <strong>2012</strong>. Quiere que le reconozcan la antigüedad más favorable. ¿Cuál tomas y por qué?</div>
+      <div class="opts" id="M05opts" data-correct="b">
+        <div class="opt" onclick="answer(this,'M05','a')"><span class="ol">A)</span> La de la carátula (2019) porque es la oficial de Axa.</div>
+        <div class="opt" onclick="answer(this,'M05','b')"><span class="ol">B)</span> La antigüedad nacional (2012) de la página 2. En Axa, la carátula solo muestra la antigüedad con esa aseguradora específica. La antigüedad nacional, que acumula todos los seguros continuos anteriores, está en la segunda página y es la que se debe usar.</div>
+        <div class="opt" onclick="answer(this,'M05','c')"><span class="ol">C)</span> La carátula siempre tiene prioridad sobre cualquier otra página.</div>
+        <div class="opt" onclick="answer(this,'M05','d')"><span class="ol">D)</span> Hay que solicitar carta de antigüedad adicional para confirmar la fecha correcta.</div>
+      </div>
+      <div class="fb" id="fbM05"></div>
+    </div>
+  </div>
+
+</div>
+</main>
+
+<footer><span>KOLTIN Academy</span> · Casos Prácticos · Sales Training 2026</footer>
+
+<script>
+// ── STATE ─────────────────────────────────────────
+const answers = {};
+const TOTAL_CASES = 27;
+
+const FEEDBACK = {
+  A01: { c:'✅ Correcto. 1 de marzo al 25 de marzo = 24 días naturales. Está dentro de los 27 días. El periodo de gracia SÍ aplica.', w:'❌ Los 27 días son naturales (incluyen fines de semana y festivos). Del 1 al 25 de marzo = 24 días. Sí procede el reconocimiento.' },
+  A02: { c:'✅ Correcto. Las capturas de pantalla NO son comprobantes válidos. Se necesita el estado de cuenta oficial (PDF) o comprobante SPEI oficial del banco.', w:'❌ Las capturas de pantalla nunca son válidas como comprobante de pago, sin importar qué tan clara sea la información.' },
+  A03: { c:'✅ Correcto. El pago retroactivo cubre desde la fecha de vencimiento original (15 de febrero). Plan mensual = cubre hasta 15 de marzo. Próximo cobro: 15 de marzo.', w:'❌ El pago retroactivo cubre desde la fecha de vencimiento original (15 de febrero), no desde el día del pago (3 de marzo).' },
+  A04: { c:'✅ Correcto. Con Banorte sin endoso, se puede proceder solo si el cliente acepta que la fecha de antigüedad será la "Fecha de Emisión". Él decide con información clara.', w:'❌ En Banorte, sin endoso de antigüedad, sí se puede proceder — pero solo si el cliente acepta que la fecha de antigüedad será la "Fecha de Emisión" de la póliza, no la antigüedad real.' },
+  A05: { c:'✅ Correcto. Las cartas de antigüedad o vínculo laboral deben tener emisión ≤30 días. 45 días no es válido. Necesita una nueva carta. El recibo de nómina del mes pasado sí está dentro del plazo.', w:'❌ Las cartas de antigüedad deben tener fecha de emisión ≤30 días. 45 días ya no es válido. Debe solicitar una nueva.' },
+  A06: { c:'✅ Correcto. La Constancia de Asegurabilidad solo confirma que está asegurado HOY. La Carta de Antigüedad acredita DESDE CUÁNDO, que es lo que necesitamos para eliminar tiempos de espera.', w:'❌ La Constancia de Asegurabilidad ≠ Carta de Antigüedad. La primera dice que está asegurado hoy; la segunda dice desde cuándo. Solo la segunda sirve para el reconocimiento.' },
+  A07: { c:'✅ Correcto. Día 40 > 27 días de gracia. El periodo venció el 28 de enero. No hay excepciones, sin importar los años de antigüedad. Se comunica con empatía pero con claridad.', w:'❌ El periodo de gracia son exactamente 27 días naturales. El día 28 venció el 28 de enero. El día 40 (10 de febrero) ya no aplica. Sin excepciones.' },
+
+  C01: { c:'✅ Correcto. Validas la objeción, usas una pregunta reflexiva sobre prioridades y ofreces explorar opciones juntos. Sin urgencia artificial.', w:'❌ La objeción de precio es de valor. Nunca la ignores, no la rebatas y nunca uses urgencia artificial. Ayúdale a ver la membresía como inversión, no como gasto.' },
+  C02: { c:'✅ Correcto. Los errores son múltiples: "nuestro seguro", "nuestro deducible", urgencia artificial y tuteo sin permiso. Todos van en contra de los lineamientos de voz Koltin.', w:'❌ Hay más errores de los que identificaste. Revisa: "nuestro seguro" → "el seguro"; "nuestro deducible" → "el deducible del seguro"; urgencia artificial nunca; tuteo sin permiso.' },
+  C03: { c:'✅ Correcto. No desacreditas al hijo — lo incluyes como aliado. Proponer una llamada conjunta es la mejor forma de avanzar sin presionar.', w:'❌ No dejes la conversación sin un siguiente paso claro. Proponer una llamada conjunta con el hijo incluye a todos y avanza sin presionar.' },
+  C04: { c:'✅ Correcto. El cambio de actitud al hablar de costos es una señal clara de objeción falsa relacionada con precio. Explorar con empatía es el siguiente paso correcto.', w:'❌ "Lo voy a pensar" después de mostrar entusiasmo inicial (y cambiarse al hablar de precios) es casi siempre objeción falsa. No la dejes sin explorar.' },
+  C05: { c:'✅ Correcto. Ante desconfianza, PRIMERO escucha. Solo después de entender su experiencia puedes dar argumentos útiles. Lanzarte a explicar sin escuchar suena a script.', w:'❌ Antes de dar argumentos, escucha. Preguntar "¿ha tenido alguna mala experiencia?" abre el diálogo y genera la confianza que necesitas para continuar.' },
+
+  P01: { c:'✅ Correcto. A los 62 años, la Membresía 3 (50-64) con $20 MDP es la recomendación correcta. Es la última oportunidad de contratar esa suma asegurada antes de los 65.', w:'❌ Los 50-64 años son la última ventana para contratar $20 MDP de suma asegurada. La Membresía 3 es la que maximiza la cobertura para alguien que quiere la mejor protección posible.' },
+  P02: { c:'✅ Correcto. $200K − $30K deducible = $170K. 20% de $170K = $34K, pero tope de coaseguro = $20K. Total cliente: $30K + $20K = $50,000. Seguro cubre: $150,000.', w:'❌ Recuerda que el coaseguro está TOPADO a $20,000. Aunque el 20% de $170K sería $34K, el cliente nunca paga más de $20K de coaseguro. Total: $30K + $20K = $50,000.' },
+  P03: { c:'✅ Correcto. La antigüedad continua comprobada elimina los tiempos de espera, incluyendo para condiciones preexistentes como la diabetes. Es uno de los beneficios más importantes del reconocimiento de antigüedad.', w:'❌ La antigüedad continua SÍ elimina los tiempos de espera para preexistencias. 7 años continuos con documentación completa = tiempos de espera eliminados.' },
+  P04: { c:'✅ Correcto. Los tres errores son: "nuestro seguro", "nuestros tiempos de espera" y la urgencia artificial. Los tres van en contra de los lineamientos de voz y tono Koltin.', w:'❌ Hay tres errores: (1) "nuestro seguro" → "el seguro" o "la membresía", (2) "nuestros tiempos de espera" → "los tiempos de espera del seguro", (3) urgencia artificial nunca.' },
+  P05: { c:'✅ Correcto. A los 70 años SÍ se puede contratar. Aplica la membresía 65+ con hasta $5 MDP, acompañamiento gerontológico, Estudio de Longevidad y Comunidad. Los tiempos de espera aplican normalmente al ser su primera póliza.', w:'❌ A los 70 años sí se puede contratar Koltin. La membresía 65+ incluye SGMM, acompañamiento gerontológico, videoconsultas con geriatra y Comunidad Koltin.' },
+
+  CI01: { c:'✅ Correcto. Un cierre sin pregunta, sin resumen y sin próximo paso claro es un mal cierre. Deja al cliente sin dirección y muy probablemente no regresará.', w:'❌ Este es un mal cierre. Un buen cierre siempre incluye: resumen de beneficios, pregunta directa pero sin presión, y un próximo paso claro.' },
+  CI02: { c:'✅ Correcto. La pregunta del pago anual es una señal de compra perfecta para aplicar el cierre puercoespín: aprovechar su pregunta para confirmar el cierre directamente.', w:'❌ La pregunta sobre el pago anual es exactamente el momento para el cierre puercoespín — aprovecharla para responder y confirmar el cierre al mismo tiempo.' },
+  CI03: { c:'✅ Correcto. Cuando una Gran Persona claramente no está en condiciones de tomar una decisión consciente, NO se cierra. La ética y el cuidado al cliente siempre van primero.', w:'❌ Saber cuándo NO cerrar es parte del criterio Koltin. Cerrar en este momento sería irresponsable. Lo correcto es proponer una llamada futura con condiciones adecuadas.' },
+  CI04: { c:'✅ Correcto. Preguntar por pago y fecha de inicio son señales claras de compra. Es el momento de responder con seguridad y avanzar al cierre.', w:'❌ "¿Con qué pago?" y "¿cuándo inicia?" son señales claras de compra. No esperes más — responde con seguridad y avanza hacia el cierre.' },
+  CI05: { c:'✅ Correcto. El cierre completo incluye: resumen de beneficios relevantes para él, aprovechar la mención de su esposa como oportunidad adicional, y terminar con pregunta de cierre directa pero sin presión.', w:'❌ Un buen cierre incluye resumen de beneficios relevantes, reconocer la oportunidad de la esposa y terminar con una pregunta directa pero sin presión.' },
+
+  M01: { c:'✅ Correcto. La secuencia correcta es: validar periodo de gracia → recordar dónde está la antigüedad en pólizas MAPFRE → manejar objeciones → proponer llamada conjunta con esposo → usar pregunta del pago anual como puercoespín.', w:'❌ Cada elemento de este caso requiere atención: periodo de gracia (20 días ✅), antigüedad MAPFRE en páginas 6-7, objeción de precio con empatía, esposo como aliado, y puercoespín para el cierre.' },
+  M02: { c:'✅ Correcto. Best Doctors Insurance no está registrada en la CONDUSEF. BBVA SS solo reconoce aseguradoras extranjeras con registro CONDUSEF. Se comunica con empatía y claridad.', w:'❌ Best Doctors Insurance no está registrada en la CONDUSEF. Sin importar los años de antigüedad, no se puede reconocer. Se lo comunicamos con respeto y empatía.' },
+  M03: { c:'✅ Correcto. La discrepancia de nombre, aunque sea por abreviación, puede causar que BBVA SS niegue el servicio en un siniestro. La carta aclaratoria (≤30 días) resuelve esto.', w:'❌ Una discrepancia de nombre, incluso por abreviación, puede causar problemas serios en un siniestro. Siempre solicita carta aclaratoria con fecha de emisión ≤30 días.' },
+  M04: { c:'✅ Correcto. Primero validas la molestia genuinamente (sin defensiva). Luego abres espacio con una pregunta. Solo si hay apertura continúas. A veces no vender en esa llamada es la mejor decisión.', w:'❌ Ante una Gran Persona molesta: primero valida su molestia genuinamente, luego escucha. Solo si hay apertura continúas. Cerrar la llamada sin validar deja una mala impresión permanente.' },
+  M05: { c:'✅ Correcto. En Axa, la carátula solo muestra la antigüedad con esa aseguradora. La antigüedad nacional (acumulada de todos los seguros anteriores) aparece en la página 2 y es la que se debe usar.', w:'❌ En Axa, la página 2 tiene la antigüedad nacional (la real, acumulada). La carátula solo muestra desde cuándo está con Axa específicamente. Siempre usa la antigüedad nacional de página 2.' },
+};
+
+function answer(el, caseId, sel) {
+  if (answers[caseId]) return;
+  const cont = el.parentElement;
+  const corr = cont.dataset.correct;
+  const fb = document.getElementById('fb' + caseId);
+  cont.querySelectorAll('.opt').forEach(o => o.classList.add('disabled'));
+  if (sel === corr) {
+    el.classList.add('correct'); fb.className = 'fb ok'; fb.innerHTML = FEEDBACK[caseId].c;
+    answers[caseId] = 'correct';
+  } else {
+    el.classList.add('wrong');
+    cont.querySelectorAll('.opt').forEach(o => { if (o.querySelector('.ol').textContent.trim()[0].toLowerCase() === corr) { o.classList.remove('disabled'); o.classList.add('correct'); }});
+    fb.className = 'fb no'; fb.innerHTML = FEEDBACK[caseId].w;
+    answers[caseId] = 'wrong';
+  }
+  updateScore();
+}
+
+function updateScore() {
+  const done = Object.keys(answers).length;
+  const pct = Math.min(100, Math.round((done / TOTAL_CASES) * 100));
+  document.getElementById('sf').style.width = pct + '%';
+  document.getElementById('sp').textContent = pct + '%';
+}
+
+function toggleCase(header) {
+  const body = header.nextElementSibling;
+  const arrow = header.querySelector('.case-arrow');
+  body.classList.toggle('open');
+  arrow.classList.toggle('open');
+}
+
+function showCat(id, btn) {
+  document.querySelectorAll('.cat').forEach(c => c.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('cat-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
